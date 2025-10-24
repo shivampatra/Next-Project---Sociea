@@ -3,7 +3,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 
-
 /**
  * Premium Loading Screen Component
  * Shows animated loader while page content loads
@@ -11,8 +10,15 @@ import { useState, useEffect } from 'react'
 export default function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true)
   const [progress, setProgress] = useState(0)
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   
   useEffect(() => {
+    // Set window dimensions on mount
+    setDimensions({
+      width: window.innerWidth,
+      height: window.innerHeight
+    })
+    
     // Simulate loading progress
     const interval = setInterval(() => {
       setProgress(prev => {
@@ -143,35 +149,36 @@ export default function LoadingScreen() {
           </motion.div>
           
           {/* Animated Particles */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {[...Array(20)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-2 h-2 bg-purple-500 rounded-full"
-                initial={{
-                  x: Math.random() * window.innerWidth,
-                  y: window.innerHeight + 20,
-                  opacity: 0,
-                }}
-                animate={{
-                  y: -20,
-                  opacity: [0, 1, 0],
-                }}
-                transition={{
-                  duration: Math.random() * 3 + 2,
-                  repeat: Infinity,
-                  delay: Math.random() * 2,
-                  ease: 'linear',
-                }}
-              />
-            ))}
-          </div>
+          {dimensions.width > 0 && (
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {[...Array(20)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-2 h-2 bg-purple-500 rounded-full"
+                  initial={{
+                    x: Math.random() * dimensions.width,
+                    y: dimensions.height + 20,
+                    opacity: 0,
+                  }}
+                  animate={{
+                    y: -20,
+                    opacity: [0, 1, 0],
+                  }}
+                  transition={{
+                    duration: Math.random() * 3 + 2,
+                    repeat: Infinity,
+                    delay: Math.random() * 2,
+                    ease: 'linear',
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>
   )
 }
-
 /**
  * USAGE:
  * 
