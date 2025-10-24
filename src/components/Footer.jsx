@@ -646,7 +646,15 @@ export default function FuturisticFooter() {
           ))}
         </div>
 
-        {/* Newsletter Section */}
+
+
+
+
+
+
+
+
+        {/* Newsletter Section
         <div className="mb-12 backdrop-blur-md bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-8 rounded-2xl border border-white/10">
           <div className="max-w-2xl mx-auto text-center">
             <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -664,7 +672,14 @@ export default function FuturisticFooter() {
               </button>
             </div>
           </div>
-        </div>
+        </div> */}
+
+
+
+
+
+
+
 
         {/* Bottom Bar with 3D Background */}
         <div className="relative border-t border-white/10 pt-8 mt-8 overflow-hidden">
@@ -679,7 +694,7 @@ export default function FuturisticFooter() {
           <div className="relative z-10">
             <p className="text-gray-400 text-center py-4">
               © {new Date().getFullYear()} Sociea. All rights reserved. Built with{' '}
-              <span className="text-red-500 animate-pulse">❤️</span> for amazing brands.
+              <span className="text-red-500 animate-pulse">❤️</span>by Shivam Patra.
             </p>
           </div>
         </div>
