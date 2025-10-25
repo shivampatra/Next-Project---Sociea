@@ -55,6 +55,14 @@ import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
 import LoadingScreen from '@/components/LoadingScreen';
 import ModernAboutSection from '@/components/AboutTeam';
+// import WhatsAppButton from '@/components/WhatsAppButton';
+
+
+
+
+
+
+
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -86,6 +94,7 @@ export default function Home() {
       <Pricing />
       <Contact />
       <Footer />
+      {/* <WhatsAppButton /> */}
     </main>
   );
 }
