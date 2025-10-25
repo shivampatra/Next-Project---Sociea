@@ -554,7 +554,7 @@ export default function FuturisticFooter() {
 
   const socialLinks = [
     { name: 'Facebook', href: '#', icon: 'F', color: '#1877F2' },
-    { name: 'Instagram', href: '#', icon: 'I', color: '#E4405F' },
+    { name: 'Instagram', href: 'https://www.instagram.com/sociea.co', icon: 'I', color: '#E4405F' },
     { name: 'Twitter', href: '#', icon: 'X', color: '#1DA1F2' },
     { name: 'LinkedIn', href: '#', icon: 'in', color: '#0A66C2' },
   ];
