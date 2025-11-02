@@ -275,9 +275,6 @@
 
 //2ND VERSION
 
-
-
-
 'use client'
 
 import { Suspense, useRef, useEffect, useState } from 'react'
@@ -295,19 +292,16 @@ function EnhancedSphere({ mousePosition, isMobile }) {
   useFrame((state) => {
     if (meshRef.current) {
       const t = state.clock.getElapsedTime()
-      // Disable mouse position influence on mobile
       const mouseX = isMobile ? 0 : mousePosition.x * 0.5
       const mouseY = isMobile ? 0 : mousePosition.y * 0.5
       
       meshRef.current.rotation.x = t * 0.15 + mouseY
       meshRef.current.rotation.y = t * 0.2 + mouseX
       
-      // Pulsing scale effect
       const scale = 2.5 + Math.sin(t * 0.5) * 0.1
       meshRef.current.scale.setScalar(scale)
     }
     
-    // Animated glow
     if (glowRef.current) {
       glowRef.current.scale.setScalar(2.8 + Math.sin(state.clock.getElapsedTime() * 0.8) * 0.15)
       glowRef.current.material.opacity = 0.3 + Math.sin(state.clock.getElapsedTime() * 0.6) * 0.1
@@ -316,7 +310,6 @@ function EnhancedSphere({ mousePosition, isMobile }) {
   
   return (
     <Float speed={1.5} rotationIntensity={0.6} floatIntensity={0.8}>
-      {/* Outer glow */}
       <Sphere ref={glowRef} args={[1, 64, 64]} scale={3.2}>
         <meshBasicMaterial
           color="#a78bfa"
@@ -326,7 +319,6 @@ function EnhancedSphere({ mousePosition, isMobile }) {
         />
       </Sphere>
       
-      {/* Main sphere */}
       <Sphere 
         ref={meshRef} 
         args={[1, 128, 128]} 
@@ -346,7 +338,6 @@ function EnhancedSphere({ mousePosition, isMobile }) {
         />
       </Sphere>
       
-      {/* Inner sparkles */}
       <Sparkles
         count={50}
         scale={2.5}
@@ -380,7 +371,6 @@ function EnhancedParticles({ count = 200, scrollY }) {
       points.current.rotation.y = t * 0.03
       points.current.rotation.x = Math.sin(t * 0.02) * 0.1
       
-      // Depth-based parallax
       const positions = points.current.geometry.attributes.position.array
       for (let i = 0; i < count; i++) {
         const i3 = i * 3
@@ -424,7 +414,6 @@ function Scene({ isMobile, mousePosition, scrollY }) {
   const { camera } = useThree()
   
   useFrame(() => {
-    // Disable camera movement on mobile
     if (!isMobile) {
       camera.position.x = THREE.MathUtils.lerp(camera.position.x, mousePosition.x * 0.5, 0.05)
       camera.position.y = THREE.MathUtils.lerp(camera.position.y, mousePosition.y * 0.3, 0.05)
@@ -454,11 +443,11 @@ function Scene({ isMobile, mousePosition, scrollY }) {
   )
 }
 
-// Typewriter component
+// Fixed Typewriter component - No blinking on mobile
 function TypewriterText({ text, delay = 50 }) {
   const [displayText, setDisplayText] = useState('')
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [showCursor, setShowCursor] = useState(true)
+  const [isComplete, setIsComplete] = useState(false)
   
   useEffect(() => {
     if (currentIndex < text.length) {
@@ -467,32 +456,31 @@ function TypewriterText({ text, delay = 50 }) {
         setCurrentIndex(prev => prev + 1)
       }, delay)
       return () => clearTimeout(timeout)
+    } else {
+      setIsComplete(true)
     }
   }, [currentIndex, delay, text])
   
-  useEffect(() => {
-    const cursorInterval = setInterval(() => {
-      setShowCursor(prev => !prev)
-    }, 500)
-    return () => clearInterval(cursorInterval)
-  }, [])
-  
   return (
-    <span>
+    <span className="inline-block">
       {displayText}
-      <motion.span
-        animate={{ opacity: showCursor ? 1 : 0 }}
-        className="inline-block w-1 h-16 md:h-24 lg:h-32 bg-gradient-to-b from-purple-500 to-pink-500 ml-2 align-middle"
-      />
+      {!isComplete && (
+        <motion.span
+          className="inline-block w-1 h-12 md:h-16 lg:h-20 bg-gradient-to-b from-purple-500 to-pink-500 ml-2 align-middle"
+          animate={{ opacity: [1, 0] }}
+          transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}
+        />
+      )}
     </span>
   )
 }
 
-// Main Hero Component
+// Main Hero Component - FIXED FOR MOBILE
 export default function Hero() {
   const containerRef = useRef(null)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [isMobile, setIsMobile] = useState(false)
+  const [isLoaded, setIsLoaded] = useState(false)
   const { scrollY } = useScroll()
   const scrollYSpring = useSpring(scrollY, { stiffness: 100, damping: 30 })
   
@@ -503,11 +491,17 @@ export default function Hero() {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
     checkMobile()
     window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
+    
+    // Set loaded state after component mounts
+    const timer = setTimeout(() => setIsLoaded(true), 100)
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile)
+      clearTimeout(timer)
+    }
   }, [])
   
   useEffect(() => {
-    // Only track mouse movement on desktop
     if (isMobile) return
     
     const handleMouseMove = (e) => {
@@ -520,20 +514,28 @@ export default function Hero() {
     return () => window.removeEventListener('mousemove', handleMouseMove)
   }, [isMobile])
   
+  // FIXED: Simplified animation variants - no stagger on mobile
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.15, delayChildren: 0.2 }
+      transition: { 
+        duration: 0.6,
+        staggerChildren: isMobile ? 0 : 0.15,
+        delayChildren: isMobile ? 0 : 0.2
+      }
     }
   }
   
   const itemVariants = {
-    hidden: { opacity: 0, y: 60 },
+    hidden: { opacity: 0, y: isMobile ? 20 : 60 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.9, ease: [0.6, 0.05, 0.01, 0.9] }
+      transition: { 
+        duration: isMobile ? 0.5 : 0.9,
+        ease: [0.6, 0.05, 0.01, 0.9]
+      }
     }
   }
   
@@ -546,59 +548,74 @@ export default function Hero() {
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)'
       }}
     >
-      {/* 3D Canvas */}
-      <motion.div 
-        className="absolute inset-0 z-0"
-        style={{ opacity: opacityTransform }}
-      >
-        <Canvas
-          camera={{ position: [0, 0, 5], fov: 75 }}
-          style={{ background: 'transparent' }}
-          dpr={isMobile ? [1, 1.5] : [1, 2]}
+      {/* 3D Canvas - Hidden initially on mobile to prevent flicker */}
+      {isLoaded && (
+        <motion.div 
+          className="absolute inset-0 z-0"
+          style={{ opacity: isMobile ? 0.3 : opacityTransform }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isMobile ? 0.3 : 1 }}
+          transition={{ duration: 1 }}
         >
-          <Suspense fallback={null}>
-            <Scene isMobile={isMobile} mousePosition={mousePosition} scrollY={scrollY} />
-          </Suspense>
-        </Canvas>
-      </motion.div>
+          <Canvas
+            camera={{ position: [0, 0, 5], fov: 75 }}
+            style={{ background: 'transparent' }}
+            dpr={isMobile ? [1, 1.5] : [1, 2]}
+          >
+            <Suspense fallback={null}>
+              <Scene isMobile={isMobile} mousePosition={mousePosition} scrollY={scrollY} />
+            </Suspense>
+          </Canvas>
+        </motion.div>
+      )}
       
       {/* Gradient overlays */}
       <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-transparent to-purple-900/40 z-1" />
       <div className="absolute inset-0 bg-gradient-to-r from-blue-900/10 via-transparent to-pink-900/10 z-1" />
       
-      {/* Subtle animated gradient orbs */}
-      <motion.div
-        className="absolute top-20 left-10 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl"
-        animate={{
-          scale: [1, 1.2, 1],
-          x: [0, 50, 0],
-          y: [0, 30, 0]
-        }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute bottom-20 right-10 w-80 h-80 bg-pink-500/30 rounded-full blur-3xl"
-        animate={{
-          scale: [1, 1.3, 1],
-          x: [0, -40, 0],
-          y: [0, -50, 0]
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-      />
+      {/* Animated gradient orbs - Reduced on mobile */}
+      {!isMobile && (
+        <>
+          <motion.div
+            className="absolute top-20 left-10 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl"
+            animate={{
+              scale: [1, 1.2, 1],
+              x: [0, 50, 0],
+              y: [0, 30, 0]
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute bottom-20 right-10 w-80 h-80 bg-pink-500/30 rounded-full blur-3xl"
+            animate={{
+              scale: [1, 1.3, 1],
+              x: [0, -40, 0],
+              y: [0, -50, 0]
+            }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </>
+      )}
       
-      {/* Content */}
+      {/* Content - FIXED: Single animation trigger, no conflicts */}
       <motion.div
         className="container mx-auto px-4 sm:px-6 text-center relative z-10 pt-20 pb-32"
         variants={containerVariants}
         initial="hidden"
-        animate="visible"
-        style={{ y: yTransform }}
+        animate={isLoaded ? "visible" : "hidden"}
+        style={{ y: isMobile ? 0 : yTransform }}
       >
         <motion.h1
           className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold mb-6 text-white drop-shadow-2xl leading-tight"
           variants={itemVariants}
         >
-          <TypewriterText text="We Grow Your Brand's Voice on Social Media" delay={40} />
+          {isMobile ? (
+            // Simple fade-in on mobile, no typewriter
+            <span>We Grow Your Brand's Voice on Social Media</span>
+          ) : (
+            // Typewriter only on desktop
+            <TypewriterText text="We Grow Your Brand's Voice on Social Media" delay={40} />
+          )}
         </motion.h1>
         
         <motion.p
@@ -615,54 +632,55 @@ export default function Hero() {
           <motion.a
             href="#contact"
             className="relative px-8 sm:px-10 py-4 sm:py-5 text-base sm:text-lg bg-white text-purple-700 rounded-full font-bold shadow-2xl overflow-hidden group"
-            whileHover={{ 
+            whileHover={!isMobile ? { 
               scale: 1.08,
               boxShadow: "0 20px 60px rgba(139, 92, 246, 0.5), 0 0 40px rgba(236, 72, 153, 0.3)"
-            }}
+            } : {}}
             whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           >
-            {/* Animated gradient background */}
             <motion.span
               className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-[length:200%_100%]"
               initial={{ x: '-100%', backgroundPosition: '0% 50%' }}
-              whileHover={{ 
+              whileHover={!isMobile ? { 
                 x: 0,
                 backgroundPosition: '100% 50%'
-              }}
+              } : {}}
               transition={{ 
                 x: { duration: 0.4, ease: "easeOut" },
                 backgroundPosition: { duration: 1.5, repeat: Infinity, ease: "linear" }
               }}
             />
             
-            {/* Shimmer effect */}
-            <motion.span
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-30"
-              initial={{ x: '-100%', skewX: -20 }}
-              whileHover={{ 
-                x: '200%',
-                transition: { duration: 0.8, ease: "easeInOut" }
-              }}
-            />
-            
-            {/* Glow pulse */}
-            <motion.span
-              className="absolute inset-0 rounded-full"
-              initial={{ opacity: 0 }}
-              whileHover={{ 
-                opacity: [0, 1, 0],
-                scale: [1, 1.05, 1]
-              }}
-              transition={{ 
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-              style={{
-                boxShadow: "inset 0 0 20px rgba(255, 255, 255, 0.5)"
-              }}
-            />
+            {!isMobile && (
+              <>
+                <motion.span
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-30"
+                  initial={{ x: '-100%', skewX: -20 }}
+                  whileHover={{ 
+                    x: '200%',
+                    transition: { duration: 0.8, ease: "easeInOut" }
+                  }}
+                />
+                
+                <motion.span
+                  className="absolute inset-0 rounded-full"
+                  initial={{ opacity: 0 }}
+                  whileHover={{ 
+                    opacity: [0, 1, 0],
+                    scale: [1, 1.05, 1]
+                  }}
+                  transition={{ 
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                  style={{
+                    boxShadow: "inset 0 0 20px rgba(255, 255, 255, 0.5)"
+                  }}
+                />
+              </>
+            )}
             
             <span className="relative z-10 group-hover:text-white transition-colors duration-300 font-extrabold">
               Let's Talk
@@ -672,60 +690,64 @@ export default function Hero() {
           <motion.a
             href="#portfolio"
             className="relative px-8 sm:px-10 py-4 sm:py-5 text-base sm:text-lg border-2 border-white text-white rounded-full font-bold backdrop-blur-md bg-white/10 overflow-hidden group"
-            whileHover={{ 
+            whileHover={!isMobile ? { 
               scale: 1.05,
               boxShadow: "0 0 40px rgba(240,171,252,0.6)"
-            }}
+            } : {}}
             whileTap={{ scale: 0.95 }}
           >
-            <motion.span
-              className="absolute inset-0 bg-gradient-to-r from-pink-500/20 to-purple-500/20"
-              initial={{ scale: 0, opacity: 0 }}
-              whileHover={{ scale: 1.5, opacity: 1 }}
-              transition={{ duration: 0.4 }}
-            />
+            {!isMobile && (
+              <motion.span
+                className="absolute inset-0 bg-gradient-to-r from-pink-500/20 to-purple-500/20"
+                initial={{ scale: 0, opacity: 0 }}
+                whileHover={{ scale: 1.5, opacity: 1 }}
+                transition={{ duration: 0.4 }}
+              />
+            )}
             <span className="relative z-10">View Our Work</span>
           </motion.a>
         </motion.div>
       </motion.div>
       
-      {/* Scroll indicator */}
-      <motion.div
-        className="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-10"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ 
-          delay: 2,
-          duration: 0.8,
-          repeat: Infinity,
-          repeatType: "reverse"
-        }}
-      >
+      {/* Scroll indicator - Only on desktop */}
+      {!isMobile && isLoaded && (
         <motion.div
-          className="relative"
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
+          className="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-10"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ 
+            delay: 2,
+            duration: 0.8,
+            repeat: Infinity,
+            repeatType: "reverse"
+          }}
         >
-          <svg
-            className="w-8 h-8 text-white drop-shadow-lg"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 14l-7 7m0 0l-7-7m7 7V3"
-            />
-          </svg>
           <motion.div
-            className="absolute inset-0 blur-xl bg-white/50"
-            animate={{ opacity: [0.3, 0.7, 0.3] }}
+            className="relative"
+            animate={{ y: [0, 10, 0] }}
             transition={{ duration: 1.5, repeat: Infinity }}
-          />
+          >
+            <svg
+              className="w-8 h-8 text-white drop-shadow-lg"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+              />
+            </svg>
+            <motion.div
+              className="absolute inset-0 blur-xl bg-white/50"
+              animate={{ opacity: [0.3, 0.7, 0.3] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+          </motion.div>
         </motion.div>
-      </motion.div>
+      )}
     </section>
   )
 }
