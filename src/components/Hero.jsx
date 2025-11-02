@@ -278,25 +278,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 'use client'
 
 import { Suspense, useRef, useEffect, useState } from 'react'
@@ -306,7 +287,7 @@ import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'fra
 import * as THREE from 'three'
 
 // Enhanced 3D Animated Sphere with glow
-function EnhancedSphere({ mousePosition }) {
+function EnhancedSphere({ mousePosition, isMobile }) {
   const meshRef = useRef()
   const glowRef = useRef()
   const [hovered, setHovered] = useState(false)
@@ -314,8 +295,12 @@ function EnhancedSphere({ mousePosition }) {
   useFrame((state) => {
     if (meshRef.current) {
       const t = state.clock.getElapsedTime()
-      meshRef.current.rotation.x = t * 0.15 + mousePosition.y * 0.5
-      meshRef.current.rotation.y = t * 0.2 + mousePosition.x * 0.5
+      // Disable mouse position influence on mobile
+      const mouseX = isMobile ? 0 : mousePosition.x * 0.5
+      const mouseY = isMobile ? 0 : mousePosition.y * 0.5
+      
+      meshRef.current.rotation.x = t * 0.15 + mouseY
+      meshRef.current.rotation.y = t * 0.2 + mouseX
       
       // Pulsing scale effect
       const scale = 2.5 + Math.sin(t * 0.5) * 0.1
@@ -346,8 +331,8 @@ function EnhancedSphere({ mousePosition }) {
         ref={meshRef} 
         args={[1, 128, 128]} 
         scale={2.5}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
+        onPointerOver={() => !isMobile && setHovered(true)}
+        onPointerOut={() => !isMobile && setHovered(false)}
       >
         <MeshDistortMaterial
           color={hovered ? "#8b5cf6" : "#667eea"}
@@ -439,8 +424,11 @@ function Scene({ isMobile, mousePosition, scrollY }) {
   const { camera } = useThree()
   
   useFrame(() => {
-    camera.position.x = THREE.MathUtils.lerp(camera.position.x, mousePosition.x * 0.5, 0.05)
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, mousePosition.y * 0.3, 0.05)
+    // Disable camera movement on mobile
+    if (!isMobile) {
+      camera.position.x = THREE.MathUtils.lerp(camera.position.x, mousePosition.x * 0.5, 0.05)
+      camera.position.y = THREE.MathUtils.lerp(camera.position.y, mousePosition.y * 0.3, 0.05)
+    }
   })
   
   return (
@@ -451,7 +439,7 @@ function Scene({ isMobile, mousePosition, scrollY }) {
       <pointLight position={[0, 5, 5]} intensity={0.6} color="#667eea" />
       <spotLight position={[0, 10, 0]} angle={0.3} penumbra={1} intensity={0.5} color="#c084fc" />
       
-      <EnhancedSphere mousePosition={mousePosition} />
+      <EnhancedSphere mousePosition={mousePosition} isMobile={isMobile} />
       <EnhancedParticles count={isMobile ? 80 : 200} scrollY={scrollY} />
       
       <OrbitControls
@@ -519,6 +507,9 @@ export default function Hero() {
   }, [])
   
   useEffect(() => {
+    // Only track mouse movement on desktop
+    if (isMobile) return
+    
     const handleMouseMove = (e) => {
       setMousePosition({
         x: (e.clientX / window.innerWidth) * 2 - 1,
@@ -527,7 +518,7 @@ export default function Hero() {
     }
     window.addEventListener('mousemove', handleMouseMove)
     return () => window.removeEventListener('mousemove', handleMouseMove)
-  }, [])
+  }, [isMobile])
   
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -624,24 +615,58 @@ export default function Hero() {
           <motion.a
             href="#contact"
             className="relative px-8 sm:px-10 py-4 sm:py-5 text-base sm:text-lg bg-white text-purple-700 rounded-full font-bold shadow-2xl overflow-hidden group"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ 
+              scale: 1.08,
+              boxShadow: "0 20px 60px rgba(139, 92, 246, 0.5), 0 0 40px rgba(236, 72, 153, 0.3)"
+            }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
           >
+            {/* Animated gradient background */}
             <motion.span
-              className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600"
-              initial={{ x: '-100%' }}
-              whileHover={{ x: 0 }}
-              transition={{ duration: 0.3 }}
+              className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-[length:200%_100%]"
+              initial={{ x: '-100%', backgroundPosition: '0% 50%' }}
+              whileHover={{ 
+                x: 0,
+                backgroundPosition: '100% 50%'
+              }}
+              transition={{ 
+                x: { duration: 0.4, ease: "easeOut" },
+                backgroundPosition: { duration: 1.5, repeat: Infinity, ease: "linear" }
+              }}
             />
-            <span className="relative z-10 group-hover:text-white transition-colors duration-300">
+            
+            {/* Shimmer effect */}
+            <motion.span
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-30"
+              initial={{ x: '-100%', skewX: -20 }}
+              whileHover={{ 
+                x: '200%',
+                transition: { duration: 0.8, ease: "easeInOut" }
+              }}
+            />
+            
+            {/* Glow pulse */}
+            <motion.span
+              className="absolute inset-0 rounded-full"
+              initial={{ opacity: 0 }}
+              whileHover={{ 
+                opacity: [0, 1, 0],
+                scale: [1, 1.05, 1]
+              }}
+              transition={{ 
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              style={{
+                boxShadow: "inset 0 0 20px rgba(255, 255, 255, 0.5)"
+              }}
+            />
+            
+            <span className="relative z-10 group-hover:text-white transition-colors duration-300 font-extrabold">
               Let's Talk
             </span>
-            <motion.span
-              className="absolute inset-0 shadow-[0_0_30px_rgba(168,85,247,0.6)]"
-              initial={{ opacity: 0 }}
-              whileHover={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            />
           </motion.a>
           
           <motion.a
@@ -703,4 +728,4 @@ export default function Hero() {
       </motion.div>
     </section>
   )
-} 
+}
